@@ -1,0 +1,718 @@
+-- PRIMERA CLASE --
+
+es un lenguaje hibrido entre funcional y orientado a objetos
+scala se puede compilar a javascript (scala.js), o a bytecode
+
+es un gateway a la programacion funcional.
+porque me pasaria a haskell? porque es un lenguaje mas puro.
+haskell es un lenguaje complicado
+programacion se vuelve mas complicado cuando hay un estado de por medio.
+
+dentro de intelliJ idea, el plugin mas bajando es scala, despues de .ignore
+
+var vs val, nos orienta a usar val (referencia inmutable)
+
+list.foreach no podria existir en un lenguaje funcional, porque no devuelve nada
+
+las funciones se manejan como datos
+
+val addFive: (Int) => Int = (x: Int) => x + 5
+list.map(addFive)
+
+val addTwoNumbers: (Int, Int) => Int = (x, y) => x + y
+list.map(_ + 1) los tipos se infieren solos
+
+
+val sum = 1 + 2
+val sum = (1).+(2)
+
+list.mkString(", ")
+res1: String = 1, 2, 3, 4, 5
+
+0 :: list me agrega el 0 a la lista
+si quiero que un metodo se aplique al elemento de la derecha, se utiliza el ::
+
+list.::(0)
+
+5 :: listaDeInts
+
+List(1,2,3) ::: List(4,5,6)
+
+es igual a List(4,5,6).:::(List(1,2,3))  - > List(1, 2, 3, 4, 5, 6)
+
+list.apply(1) es igual a list(1)
+con list(0) accedo al primer elemento
+
+val tuple = (5, 'c', "hola")
+val (number, character, name) = tuple
+
+para usar pattern matching se tiene que usar lo que usaste para construir
+List(primer, segundo, tercero) = lista
+esto implica que List tiene el metodo unapply
+
+map es una collection?
+en java no pudieron meter a map en collection porque no existen las tuplas (lo metieron como impostor)
+
+"a" -> 5 es lo mismo que ("a" -> 5)
+
+Map en scala
+es simplemente una colection de tuplas
+
+Map(("Juan", 5), ("Pablo", 4)) es lo mismo que Map("Juan" -> 5, "Pablo" -> 4)
+
+tengo los mismos metodo de una collection
+aMap.map{ case(name,age) => (name, age+3) }
+
+le puedo hacer un toList, como tambien un toMap
+
+String es una collection tambien, por lo cual tiene map
+
+Partition
+devuelve una tupla con las dos listas partidas segun cierto criterio
+
+val (positivos, negativos) = list.partition(_ > 0)
+
+Funciones de alto orden: funciones que reciben funciones en sus parametros
+
+de dos lista puedo hacer un zip y despues un toMap
+
+list.sliding(3).toList es una ventana que va guardando muchas lista
+list.grouped(3) guarda listas de 3 pero sin solapar con el anterior
+
+muchas veces despues de un map se llama a flatten
+List(List(5), List(6), List(3)).flatten  - > List(5, 6, 3)
+
+
+Option[T]   Some(T) None
+se puede pensar como un word
+
+reduceOption devuelve un Some(elResult) o None si la lista es vacia
+
+list.foldRight(0)(_ + _)
+es conveniente usar fold ya que deja a la estructura decidir dependiendo de que es mas eficiente
+
+separar los paramentros de una funcion en grupos me permite hacer un curry function.
+tambien se usa para inferir tipos
+
+-- SBT --
+con un simple build.sbt definiendo name, version, y scala version
+
+podes entrar al shell de sbt, y hacer el compile desde ahi (va ser mas rapido)
+
+--Object --
+igual que una clase pero solo una instancia
+
+groupBy es una funcion que agrupa segun cierto criterio
+
+groupBy { e => e.length }
+
+
+// case classes
+
+case class Point(x: Int, y: Int)
+//implemento hash code, equals, to string, apply, unapply (para pattern matching)
+// tambien me da el metodo copy
+val Point(x, y) = point
+val a: Point =.....
+a match {
+    case Point(0,0) => "centro del eje"
+    case Point(_, 0) => "sobre eje x"
+    case Point(0, _) => "sobre eje y"
+    case Point(x, y) => s"Punto en $x, $y"
+}
+
+un object con el mismo nombre que una clase se llama objecto acompañante, es cual puede definir
+el comportamiento estatico.
+def apply tiene que dentro del object (entorno estatico, no tiene sentido que una instancia se cree un Point)
+
+
+
+
+-- SEGUNDA CLASE --
+
+
+companion object => agrega los metodo estaticos a una clase
+
+// case object
+case object Ack
+es un object que va tener toString y equals
+
+un object puede extender de una clase, como object Main extends app
+
+//trait vs abstract class
+//traits pueden tener atributos, pueden implementar metodos, y tiene multiple herencia
+// lo unico bueno de abstract classes es "Abstract classes can have constructor parameters"
+
+trait Tree
+case class Branch(value: Int, left: Tree, right: Tree) extends Tree
+case class Leaf(value: Int) extends Tree
+
+val tree: Tree = Branch(5, Leaf(2), Leaf(7))
+
+En estructuras inmutables no hay ciclos, y es por eso que las case classes pueden tener el toString, o el equals con seguridad que no
+se quedan en un loop infinito.
+
+OOP vs functional
+
+trait Tree {
+    def sum: Int
+}
+
+obligo a que objeto a que me responda su size
+
+en funcional alguien externo hace el sum
+defino def sumLeaves(t: Tree): Int = {
+    t match {
+        case Branch(l,r) => sumLeaves(l) + sumLeaves(r)
+        case Leaf(value) => value
+    }
+}
+En java no hay pattern matching por lo cual solo se podria hacer con instanceOf
+// sealed trait
+No me permite crear una subclase del trait por fuera del archivo,
+esto me cuida del pattern matching que implemente.
+Un usuario cualquiera no puede implementar su subclase, ya que me romperia el codigo.
+
+Orientado a objetos si no soy el dueño es imposible extender su funcionalidad (agregarle un metodo al trait)
+Functional me permite agregar nuevo comportamiento sin modificar la estructura
+
+
+// generics
+sealed trait Tree[+T]{
+    def sum: Int
+}
+// parametric type (type constructors), y el + aclara que el parametro sea covariante,
+case class Branch[T](left: Tree[T], right: Tree[T]) extends Tree[T]
+case class Leaf[T](value: T) extends Tree[T]
+
+// el + me permite asignar subtipos a tipo mas generales,
+unaList: List[Any] = List(1,2,3)
+// el -
+me permite pasar un Printer[Shape] a un metodo que recibe Printer[Rectangle]
+// string interpolation
+s"nombre de usuario : $name"
+
+val anyList: List[Any] = List(1,2,3)
+scala me lo permite porque es inmutable, por lo cual no le voy a poder agregar un Any a mi List[Int]
+
+// types (simplemente un alias), solo adentro de un bloque de codigo
+type FreqMap = Map[String, Int]
+
+
+//composicion de clases
+class A {
+    def value: String = "A"
+}
+trait T1 {
+    def hellot1: String: "Im t1"
+}
+trait T2 {
+    def hellot2: String: "Im t2"
+}
+
+class B extends T1 with T2 {} //herencia multiple de traits
+una instancia de B tiene los dos metodos implementados en los traits
+
+// Compound types (with)
+Si no puedo extender a una clase, la puedo extender cuando creo una instancia
+val person: Person with MutableChildren = Person("Agustin") with MutableChildren
+
+person ahora va tener los metodos y atributos de Person y MutableChildren
+
+
+//IMPLICIT CLASSES
+
+//utiles para extender el lenguaje
+// este object sirve como un alias a un package, en el cual tengo lo que serian inner clases
+object Strings {
+    // Tiene que recibir un unico parametro para envolver y extender a la clase String en este caso
+    implicit class Str(str: String){
+        def wow: String = str.toUpperCase + " !!!"
+    }
+}
+object ImplicitClasses extends App {
+    // los imports pueden estar en cualquier lado, en este caso tengo todo lo del object Strings
+    import Strings._
+    "hoa".wow
+    // cuando el compilador ve que String no tiene el metodo wow(), busca si hay definida una clase implicita, el cual me extiende el comportamiento
+}
+
+objects Booleans {
+ tener false la primera
+    implicit class MyBool(x: Boolean){
+        def and (that: MyBool): MyBool = if (x) that else this
+        def or(that: MyBool): MyBool = if (x) this else that
+        def negate: MyBool = new MyBool(!x)
+    }
+    })
+}
+
+//Enums
+
+object Enums {
+
+    object WeekDay extednds Enumeration {
+        type WeekDay = Value
+        val Mon, Tue, Wed, Thu, Fri = Value
+    }
+}
+
+//Currification of functions
+
+def multiply(n1: Int)(n2: Int): Int = n1 * n2
+
+val double: (Int) => Int = multiply(2)(_)
+double: Function1[Int, Int]
+
+double(4) es igual a 8
+
+
+//Funciones de alto orden, funciones que reciben funciones como parametro
+//el poder de inferencia de tipos
+val myFunction: Int => Int = (n: Int) => n + 1
+f1(myFunction)
+f1((n: Int) => n + 1)
+f1(n => n + 1)
+f1(_ + 1)
+
+
+// Partial Function
+reciben un Shape, pero solo maneja algunos shapes
+esto es una partial function, que recibe un Any(el unico tipo en comun)
+// una funcion parcial es una funcion (extends Function) que recibe un unico argumento
+val partialFunction: PartialFunction[Any, Int] = {
+    case n: Int => n + 1
+    case s: String => s.length
+}
+
+def completeFunction(v: Any):Int = {
+    v match{
+        case n: Int => n + 1
+        case s: String => s.length
+    }
+}
+una funcion parcial tiene el metodo partialFunction.isDefinedAt(true)
+// collect recibe una partial function, y se asegura que puede manejar el valor antes de procesarlo
+List("hello", 12, true).collect {
+    case n: Int => n
+}
+
+tambien es util para usar pattern matching
+.map {
+    case (word, list) => word -> list.length
+}
+
+
+// Parametros por nombre (La hacemos lazy, es decir que solo se pide cuando se usa)
+def f3(p: => Int): Unit = {
+    print(p)
+}
+
+f3({
+    println("Generating value")
+    3
+})
+f3(3)
+
+MyLog.logDebug("List values: " + list) // obtener esta list puede ser muy costoso y puede que no se use,
+// por lo cual conviene recibir por nombre
+
+
+//Extender el lenguaje
+
+ponele que queremos agregarle break al lenguaje, lo cual no tiene porque se puede lograr de otras maneras funcionales
+
+object DSL extends App {
+
+    import Break._
+    breakable {
+        for(i <- 1 to 100){
+            println(i)
+            if (i == 10)
+                break
+        }
+    }
+}
+
+object Break {
+    private class BreakException extends RuntimeException
+    private val excep = new BreakException
+
+    def breakable(op: => Unit): Unit = {
+        try{
+            op
+        }
+        catch{
+            case ex: BreakException =>
+        }
+    }
+
+    def break: Unit = throw excep
+}
+
+
+// Macros
+
+case class Book(
+    title: String,
+    author: String,
+    categories: List[String]
+)
+
+object Jsons {
+    import io.circe._
+    import io.circe.generic.auto._
+    import io.circe.parser._
+    import io.circe.syntax._
+
+    val book = Book("Programming in Scala", "Martin Odersky", List("programming", "scala"))
+    val json: String = book.asJson.spaces2
+
+    val newBook = decode[Book](json)
+
+}
+
+
+
+
+-- TERCERA CLASE --
+
+//Value classes
+
+case class Meter(value: Double) {
+    def +(m: Meter) = Meter(value + m.value)
+}
+
+Perdemos performance de esta manera, ya que creamos muchos objectos.
+
+esto te permite un chequeo de tipos mas profundo
+case class Meter(value: Double) extends AnyVal
+
+al extender de anyVal, el compilador elimina todo el wrapper y se toma directamente como un Double
+solo puedo tener un constructor, con un argumento, y solo un atributo.
+
+
+//Implicit parameters
+
+case class Conf(indent: Int, app: String)
+
+//el parametro conf puede ser implicito, hay que separarlo
+def logMessage(msg: String, type: String)(implicit conf: Conf): Unit = {
+    val indentStr = " " * conf.indent
+    println(s"$indentStr[$type] [App: ${conf.app}] $msg")
+}
+
+val c = Conf(4, "ImplicitsDemo")
+logMessage("Loading app", "INFO")(c)
+logMessage("Started up", "INFO")(c)
+
+es feo tener que siempre pasar el conf como parametro
+
+
+implicit val conf = Conf(4, "ImplicitsDemo")
+logMessage("Loading app", "INFO")
+logMessage("Started up", "INFO")
+
+
+object Logs {
+    def logMessage(msg: String, type: String)(implicit conf: Conf): Unit = {
+        val indentStr = " " * conf.indent
+        println(s"$indentStr[$type] [App: ${conf.app}] $msg")
+    }
+
+    implicit val defaultValues: Conf = Conf(4, "ImplicitValues")
+}
+
+//ya viene con el default implicit value en el object
+Logs.logMessage("Un mensaje", "ALERT")
+
+
+//implicit conversions
+
+case class Point2D(x: Int, y: Int)
+
+object PointConversions extends App {
+    implicit def tupleToPoint(t: (Int, Int)): Point2D = Point2D(t._1, t._2)
+    implicit def intToPoint(v: Int): Point2d = Point2D(v, v)
+}
+
+import PointConversions._
+val p1: Point2D = (1, 2)
+val p2: Point2D = 5
+
+//Option class
+
+case class User(name: String, alias: Option[String] = None)
+
+// si hago un Option[Fruit] puedo pasarle una manzana
+trait Option[+T] {
+    def map[U](f: T => U): Option[U]
+}
+case class Some[T](value: T) extends Option[T] {
+    def map[U](f: T => U) = Some( f(value))
+}
+case object None extends Option[Nothing] {
+    def map[U](f: T => U) = None
+}
+// Nothing es el subtipo de todos los tipos
+
+Nil es una List[Nothing]
+Nothing es algo similar a null en java, que se puede asignar a cualquier tipo
+
+
+
+object FuncStructs extends App {
+
+    val users: List[User] = List (
+        User("Pepe"),
+        User("Jorge", "jorgelin")
+    )
+
+    val normalizedUsers: List[User] = users.map(
+        u => u.copy(alias = u.alias.map(_.toUpperCase))
+    )
+}
+
+//Either
+
+trait Either[L, R]
+case class Left[L](value: L) extends Either[L, Nothing]
+case class Right[R](value: R) extends Either[Nothing, R]
+
+cuando usas map o un foreach usa el valor Right
+
+//Try
+
+trait Try[+T]
+
+case class Success[+T](value: T) extends Try[T]
+case class Failure[+T](e: Throwable) extends Try[T]
+
+object Try {
+    def apply[T](op: => T): Try[T] = {
+        try {
+            Success(op())
+        }
+        catch{
+            case e: Exception => Failure(e)
+        }
+    }
+}
+
+entonces puedo hacer Try(value.toInt)
+
+//Futures
+
+def downloadSync(url: String): String = {
+    Source.formURL(url).getLines().mkString("\n")
+}
+val value = downloadSync("www.google.com")
+
+
+para hacerlo asyncronico
+
+import scala.concurrent.ExecutionContext.Implicits.global
+Future {
+    downloadSync("www.google.com")
+}
+
+
+def downloadAsync(url: String): Future[String] = {
+    Future {
+        Source.formURL(url).getLines().mkString("\n")
+    }
+}
+
+me esta devolviendo un ticket donde puedo reclaramar el value en un futuro
+
+val future = downloadAsync("google.com")
+future.onComplete{
+    case Success(v) =>
+    case Failure(e) =>
+}
+
+def countChars(url: String): Future[Int] = {
+    //El map recrea el container,
+    downloadAsync(url).map(_.length)
+}
+
+//COMBINAR MUCHOS FUTURES
+
+//sumar los dos valores
+val r1: Future[Int] = ...
+val r2: Future[Int] = ...
+
+val result: Future[Int] = r1.flatMap {v1 =>
+            r2 map { v2 =>
+                v1 + v2
+            }
+        }
+
+val result2: Future[Int] = for {
+    v1 <- r1
+    v2 <- r2
+} yield v1 + v2
+
+esto funciona para futures, options
+
+case class Person(id: String, firstName: Option[String], lastName: Option[String])
+
+val fullName: Option[String] = for {
+    first <- p.firstName
+    last <- p.lastName
+} yield first + " " + last
+
+
+//Bounds
+esto me permite crear un ShapeContainer[Shape] [Traingle] o lo que sea subclase de Shape
+class ShapeContainer[T <: Shape]
+
+A es un subtip de shape o cualquier cosa que se pueda convertir en un sub tipo shape
+def area [A <% Shape](shape: A)(implicit c: A => Shape) : Int => shape.area
+
+
+
+
+-- CUARTA CLASE --
+
+comportamiento de List[T]
+
+List("hola", "jorge") no tiene el .sum
+List(1,2,3,4).sum te da 10
+
+comportamiento generico segun el T
+
+
+case class Point(x: Int, y: Int)
+
+//para hacer esto generico necesito que tenga la funcion +, y un valor inicial
+def sum(list: List[Int]): Int = {
+    list.foldLeft(0)(_ + _)
+}
+
+trait Adder [T] {
+    def zero: T
+    def add(a: T, b: T): T
+}
+
+el adder lo puedo recibir como un parametro implicito
+a el tipo T solo le pido una implementacion para poder realizar la suma
+def sum[T](list: List[T])(implicit adder: Adder[T]): T = {
+    list.foldLeft(adder.zero)(adder.add)
+}
+
+esto no permite implementar un Adder para nuestro Point
+implicit val pAdder = new Adder[Point] {
+    override def zero: Point = Point(0,0)
+    override def add(a: Point, b: Point): Point = a + b
+}
+
+y ahora podemos hacer
+sum(List(Point(1,2), Point(3,4), Point(2,1)))
+
+//context bounds, o type classes
+//cualquer T donde exista un Adder[T]
+def sum[T : Adder](list: List[T]): T = {
+    val adder = implicitly[Adder[T]]
+    list.foldLeft(adder.zero)(adder.add)
+}
+
+
+case class Point(x: Int, y: Int)
+object Point {
+    implicit val numericP: Numeric[Point] = new Numeric[Point] {.....}
+}
+
+entonces cuando alguien importa Point, ese Point ya es numerico
+
+en java yo pido que tu clase sea comparable
+en scala te pido que tengas unas implementacion de Ordering para tu clase
+
+al tener ciertos parametros implicitos, se agrega comportamiento segun cada tipo.
+
+// distintas implementaciones de map, filter, etc
+
+val urls = List(
+    "scala-lang.org",
+    "scala-android.org"
+)
+
+val content: List[String] = urls.filter(_.endsWith(".org")).map(u => Source.fromURL(u).getLines().mkString("\n"))
+
+imperativo(te digo como hacer lo que querio hacer) vs declarativo (te digo que quiero pero no como)
+
+urls.view
+me cambia todas las implementaciones de filter, map, etc
+solo se ejecuta el codigo cuando llamo a un foreach
+las funciones son lazy, se puede ver como un plan
+
+urls.par //cambia las implementaciones para que se ejecute todo en paralelo
+
+esto es una ventaja de un lenguaje declarativo, porque me permite cambiar la implementacion de manera rapida
+
+// Para manejar concurrencia, hasta ahora conocemos .par y Futures
+
+//Spark fue la aplicacion killer de scala que llamo la atencion del lenguaje. IBM tomo una medida muy importante con Spark
+//Spark distribuje data en un cluster y permite procesarla en paralelo
+
+lazy val se computa solo cuando se llama la primera vez, y despues queda almacenado
+
+
+//Jupyter: sistema de notebook mas conocido
+//Zeppelin es una notebook escrito en scala
+permite embeber grafico, %md language que es lo que usar github en su readme
+
+
+//Actores
+ implementas una clase que extiende Actor
+ esta trait te pide el metodo
+override def receive: Receive
+
+Receive es una  PartialFunction[Any, Unit]
+
+val system = ActorSystem("mySystem")
+val hello: ActorRef = system.actorOf(Props[HelloWorld], "hello")
+hello.!() recibe un implicit sender: ActorRef
+
+case class Count(value: Int)
+case object GetStats
+case class Stats(value: Int)
+class Counter extends Actor {
+  //hay mutabilidad, pero en actores nunca hay problema de concurrencia porque un actor maneja un mensaje a la vez
+  var total: Int = 0
+
+  override def receive: Receive = {
+    case Count(value) =>
+      total += value
+    case GetStats =>
+      sender ! Stats(total)
+  }
+}
+
+class Printer extends Actor {
+  override def receive: Receive = {
+    case msg => println(msg)
+  }
+}
+
+object CounterTest extends App {
+  val system = ActorSystem("mySystem")
+  private val counter: ActorRef = system.actorOf(Props[Counter])
+  private val printer: ActorRef = system.actorOf(Props[Printer])
+  counter ! Count(10)
+  counter ! Count(5)
+
+// uso .tell porque estoy en un contexto donde el implicit sender no me sirve, quiero que el sender reciba la respuesta y imprimirla
+  counter.tell(GetStats, printer)
+}
+
+
+//implementacion de un crawler
+
+Vamos a tener un unico Fetcher, que tiene muchos workers que controla
+cada vez que pedimos un link el worker que bloquea, pero voy a tener muchos trabajando de manera concurrente
+
+Tambien vamos a tener un Parser que tambien tiene workers (cantidad de workers va a depender de los cores de la compu)
+
+por ultimo tenemos el crawler, que puede ser unico ya que el manejo de mandar y recibir mensajes es muy rapido
+

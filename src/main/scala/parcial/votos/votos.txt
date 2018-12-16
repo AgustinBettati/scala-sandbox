@@ -1,0 +1,6 @@
+Buenos Aires, Pilar, A, 2300
+Buenos Aires, Pilar, B, 1700
+Buenos Aires, Pilar, C, 1500
+Buenos Aires, San Isidro, A, 1500
+Buenos Aires, San Isidro, B, 1700
+Buenos Aires, San Isidro, C, 20500
